@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>口コミ返信 下書きツール（試作版）</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; margin: 0; background: #f6f4ef; color: #2b2b2b; line-height: 1.7; }
+  header { background: #31572c; color: #fff; padding: 20px 16px; }
+  header h1 { margin: 0; font-size: 20px; }
+  header p { margin: 4px 0 0; font-size: 13px; opacity: .9; }
+  main { max-width: 860px; margin: 0 auto; padding: 20px 16px 48px; }
+  section { background: #fff; border: 1px solid #e2ddd2; border-radius: 10px; padding: 18px; margin-bottom: 18px; }
+  h2 { font-size: 16px; margin: 0 0 12px; border-left: 4px solid #31572c; padding-left: 8px; }
+  label { display: block; font-size: 13px; font-weight: bold; margin: 12px 0 4px; }
+  label:first-of-type { margin-top: 0; }
+  input[type="text"], select, textarea { width: 100%; padding: 9px; border: 1px solid #c9c2b2; border-radius: 6px; font-size: 14px; font-family: inherit; background: #fff; }
+  textarea { min-height: 110px; resize: vertical; }
+  .hint { font-size: 12px; color: #777; margin-top: 2px; }
+  .stars { display: flex; gap: 6px; margin-top: 4px; }
+  .stars button { font-size: 22px; background: #fff; border: 1px solid #c9c2b2; border-radius: 6px; width: 46px; height: 42px; cursor: pointer; color: #c9c2b2; }
+  .stars button.on { color: #e8a020; border-color: #e8a020; background: #fdf6e3; }
+  .gen { display: block; width: 100%; margin-top: 18px; padding: 13px; font-size: 16px; font-weight: bold; background: #31572c; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+  .gen:hover { background: #274a22; }
+  .warn { display: none; background: #fdecea; border: 1px solid #d9534f; color: #8f2d28; border-radius: 8px; padding: 12px 14px; font-size: 13px; margin-bottom: 14px; }
+  .note { display: none; background: #fff8e1; border: 1px solid #e0c060; color: #6b5510; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 14px; }
+  .cards { display: grid; gap: 14px; }
+  @media (min-width: 720px) { .cards { grid-template-columns: 1fr 1fr 1fr; } }
+  .card { border: 1px solid #e2ddd2; border-radius: 10px; padding: 14px; background: #fffdf8; display: flex; flex-direction: column; }
+  .card h3 { margin: 0 0 8px; font-size: 14px; color: #31572c; }
+  .card .body { white-space: pre-wrap; font-size: 13.5px; flex: 1; }
+  .card .meta { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+  .card .count { font-size: 12px; color: #888; }
+  .copy { padding: 6px 14px; font-size: 13px; background: #fff; border: 1px solid #31572c; color: #31572c; border-radius: 6px; cursor: pointer; }
+  .copy:hover { background: #eef4ec; }
+  #results { display: none; }
+  .empty { color: #999; font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>口コミ返信 下書きツール</h1>
+  <p>口コミを貼るだけで、返信の下書きを3パターン作ります。試作版（オフライン動作）</p>
+</header>
+<main>
+
+  <section>
+    <h2>お店の設定</h2>
+    <label for="storeName">店舗名</label>
+    <input type="text" id="storeName" placeholder="例: 麺屋 たかはし">
+    <label for="genre">業種</label>
+    <select id="genre">
+      <option value="飲食店">飲食店</option>
+      <option value="美容室・サロン">美容室・サロン</option>
+      <option value="小売店">小売店</option>
+      <option value="その他">その他</option>
+    </select>
+    <label for="feature">お店の特徴（任意）</label>
+    <input type="text" id="feature" placeholder="例: 自家製麺と無化調スープ">
+    <p class="hint">名詞句で入れると、高評価への返信の中で自然に触れます。空欄でも問題ありません。</p>
+  </section>
+
+  <section>
+    <h2>口コミを貼り付け</h2>
+    <label for="sampleSel">サンプルで試す（動作確認用）</label>
+    <select id="sampleSel">
+      <option value="">― サンプルを選ぶと自動で入力されます ―</option>
+    </select>
+    <label>星評価</label>
+    <div class="stars" id="stars">
+      <button type="button" data-v="1">★</button>
+      <button type="button" data-v="2">★</button>
+      <button type="button" data-v="3">★</button>
+      <button type="button" data-v="4">★</button>
+      <button type="button" data-v="5">★</button>
+    </div>
+    <label for="reviewText">口コミ本文</label>
+    <textarea id="reviewText" placeholder="口コミの本文をここに貼り付けてください"></textarea>
+    <button class="gen" id="genBtn" type="button">返信案を3パターン作る</button>
+  </section>
+
+  <div class="warn" id="critWarn"></div>
+  <div class="note" id="piiNote"></div>
+
+  <section id="results">
+    <h2>返信案（内容を確認してからお使いください）</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>丁寧</h3>
+        <div class="body" id="out-polite"></div>
+        <div class="meta"><span class="count" id="cnt-polite"></span><button class="copy" data-t="polite" type="button">コピー</button></div>
+      </div>
+      <div class="card">
+        <h3>親しみ</h3>
+        <div class="body" id="out-friendly"></div>
+        <div class="meta"><span class="count" id="cnt-friendly"></span><button class="copy" data-t="friendly" type="button">コピー</button></div>
+      </div>
+      <div class="card">
+        <h3>簡潔</h3>
+        <div class="body" id="out-short"></div>
+        <div class="meta"><span class="count" id="cnt-short"></span><button class="copy" data-t="short" type="button">コピー</button></div>
+      </div>
+    </div>
+  </section>
+
+  <p class="empty">※ 返信案は下書きです。投稿前に必ず内容をご確認ください。事実と異なる約束や、個別の事情への言及は含まれていません。</p>
+</main>
+
+<script id="rr-engine">
+"use strict";
+/*
+ * 口コミ返信 下書きエンジン（テンプレート + ルールエンジン / DOM非依存）
+ *
+ * 設計上の安全ルール:
+ * - 口コミ本文を返信文に一切引用しない（投稿者の個人情報・他のお客様への言及が混入しない）。
+ * - 投稿者名は使わない。事実関係を断定せず、低評価では「確認する」姿勢の文型だけを使う。
+ * - 食中毒・異物混入・怪我など重大な内容は critical として検出し、専用の最小文型に切り替える。
+ * - 同じ入力には同じ出力を返す（決定的動作。QAで再現可能にするため）。
+ */
+const ReviewReplyEngine = (() => {
+
+  // ---- 重大クレーム検出（該当したら通常文型を使わない） ----
+  const CRITICAL_KEYWORDS = [
+    "食中毒", "異物", "虫が入", "髪の毛が入", "髪が入", "怪我", "ケガ", "やけど",
+    "盗難", "盗まれ", "セクハラ", "体調不良", "体調が悪", "嘔吐", "吐き気", "下痢",
+    "アレルギー", "保健所", "警察", "返金して", "詐欺", "ぼったくり", "ぼったくられ"
+  ];
+
+  // ---- 個人情報らしき文字列の検出（返信では触れず、画面に注意だけ出す） ----
+  const PII_PATTERNS = [
+    /0\d{1,4}-\d{2,4}-\d{3,4}/,            // 電話番号
+    /[\w.+-]+@[\w-]+\.[\w.]+/,              // メールアドレス
+    /\d{3}-\d{4}/                            // 郵便番号
+  ];
+
+  // ---- 話題カテゴリ（キーワード分類） ----
+  // neg が1つでも当たればその話題は「不満点」として扱う（pos より neg を優先）。
+  const CATEGORIES = [
+    {
+      id: "taste", label: "お料理・味",
+      pos: ["美味し", "おいし", "絶品", "うまかっ", "うまい", "新鮮", "ボリューム満点", "ジューシー", "ふわふわ", "サクサク", "絶妙", "味が好み"],
+      neg: ["まずい", "味が薄", "薄味", "味が濃すぎ", "冷めてい", "ぬるい", "量が少な", "味が落ち", "しょっぱすぎ", "油っぽすぎ"],
+      praise: {
+        polite: "お料理をお褒めいただき、ありがとうございます。",
+        friendly: "お料理、気に入ってもらえてうれしいです！",
+        short: "お料理へのお褒めの言葉、ありがとうございます。"
+      },
+      complaint: {
+        polite: "お料理につきまして、ご期待に沿えず申し訳ございません。",
+        friendly: "お料理、期待に応えられなくてごめんなさい。",
+        short: "お料理の点、ご期待に沿えず申し訳ございません。"
+      }
+    },
+    {
+      id: "service", label: "接客・対応",
+      pos: ["接客が良", "接客が丁寧", "笑顔", "親切", "愛想が良", "感じがいい", "感じが良い", "元気で明る", "丁寧な対応", "店員さんが優し", "スタッフが優し", "店主が優し"],
+      neg: ["態度が悪", "態度の悪", "無愛想", "不親切", "横柄", "感じが悪", "感じ悪", "対応が悪", "対応が冷た", "塩対応", "無視され", "愛想が悪"],
+      praise: {
+        polite: "スタッフの対応をお褒めいただき、ありがとうございます。",
+        friendly: "スタッフの対応も褒めてもらえて、みんな喜びます！",
+        short: "スタッフへのお褒めの言葉、ありがとうございます。"
+      },
+      complaint: {
+        polite: "スタッフの対応でご不快な思いをおかけし、申し訳ございません。",
+        friendly: "スタッフの対応で嫌な思いをさせてしまって、ごめんなさい。",
+        short: "スタッフの対応の点、申し訳ございません。"
+      }
+    },
+    {
+      id: "skill", label: "技術・仕上がり",
+      pos: ["仕上がり", "イメージ通り", "思い通り", "センスが良", "技術が高い", "上手で", "腕が良"],
+      neg: ["仕上がりが思", "イメージと違", "思っていたのと違", "下手", "雑に感", "左右非対称"],
+      praise: {
+        polite: "仕上がりにご満足いただけたようで、担当スタッフも大変喜びます。",
+        friendly: "仕上がり、気に入ってもらえてよかったです！",
+        short: "仕上がりへのご満足の声、ありがとうございます。"
+      },
+      complaint: {
+        polite: "仕上がりがご希望に沿えず、申し訳ございません。",
+        friendly: "仕上がり、希望どおりにできなくてごめんなさい。",
+        short: "仕上がりの点、ご希望に沿えず申し訳ございません。"
+      }
+    },
+    {
+      id: "price", label: "価格",
+      pos: ["コスパ", "お得", "リーズナブル", "値段の割", "価格の割", "安くて美味", "安くておいし"],
+      neg: ["高すぎ", "割高", "値段が高い", "価格が高い", "値段の割に", "コスパが悪", "コスパ悪"],
+      praise: {
+        polite: "価格にもご納得いただけたようで、うれしく思います。",
+        friendly: "お値段にも納得してもらえて、うれしいです！",
+        short: "価格へのご納得の声、ありがとうございます。"
+      },
+      complaint: {
+        polite: "価格について割高に感じさせてしまい、申し訳ございません。",
+        friendly: "お値段、割高に感じさせてしまってごめんなさい。",
+        short: "価格の点、申し訳ございません。"
+      }
+    },
+    {
+      id: "clean", label: "清潔さ",
+      pos: ["清潔感", "清潔で", "きれいで", "綺麗で", "掃除が行き届", "ピカピカ"],
+      neg: ["汚い", "汚れが", "ホコリ", "ほこり", "臭い", "においがきつ", "ベタベタ", "不衛生", "ゴミが落", "ヌメリ"],
+      praise: {
+        polite: "店内の清潔さにもお気づきいただき、ありがとうございます。日々の清掃の励みになります。",
+        friendly: "店内がきれいって言ってもらえて、掃除の励みになります！",
+        short: "店内の清潔さへのお褒め、ありがとうございます。"
+      },
+      complaint: {
+        polite: "店内の清潔さが行き届いておらず、申し訳ございません。",
+        friendly: "店内の清潔さ、行き届いてなくてごめんなさい。",
+        short: "店内の清潔さの点、申し訳ございません。"
+      }
+    },
+    {
+      id: "wait", label: "待ち時間",
+      pos: ["待たずに", "すぐ案内", "スムーズに案内", "提供が早", "出てくるのが早"],
+      neg: ["待たされ", "待ち時間", "待ったのに", "行列", "混んでい", "混雑", "出てくるのが遅", "提供が遅", "時間がかかりすぎ"],
+      praise: {
+        polite: "お待たせすることなくご案内できたようで、安心いたしました。",
+        friendly: "待たずに案内できたみたいで、よかったです！",
+        short: "スムーズにご案内できたようで何よりです。"
+      },
+      complaint: {
+        polite: "お待たせしてしまい、申し訳ございません。",
+        friendly: "待たせてしまって、ごめんなさい。",
+        short: "お待たせした点、申し訳ございません。"
+      }
+    },
+    {
+      id: "reservation", label: "予約",
+      pos: ["予約が取れ", "予約ができ", "予約がスムーズ", "予約しやす"],
+      neg: ["予約が取れな", "予約したのに", "予約のミス", "予約ミス", "予約ができな", "予約と違"],
+      praise: {
+        polite: "ご予約からご来店まで、スムーズにご案内できたようで何よりです。",
+        friendly: "予約からスムーズに案内できたみたいで、よかったです！",
+        short: "ご予約の手続きへのお言葉、ありがとうございます。"
+      },
+      complaint: {
+        polite: "ご予約の対応でご不便をおかけし、申し訳ございません。",
+        friendly: "予約の対応で不便をかけてしまって、ごめんなさい。",
+        short: "ご予約対応の点、申し訳ございません。"
+      }
+    },
+    {
+      id: "assortment", label: "品揃え・在庫",
+      pos: ["品揃えが良", "品ぞろえが良", "品揃えが豊富", "種類が豊富", "種類が多く", "いろいろ揃", "色々揃"],
+      neg: ["品揃えが悪", "在庫がな", "売り切れ", "品切れ", "種類が少な", "お目当ての商品がな", "欲しいものがな"],
+      praise: {
+        polite: "品揃えをお褒めいただき、ありがとうございます。",
+        friendly: "品揃え、気に入ってもらえてうれしいです！",
+        short: "品揃えへのお褒めの言葉、ありがとうございます。"
+      },
+      complaint: {
+        polite: "お目当ての品をご用意できず、申し訳ございません。",
+        friendly: "お目当ての品がなくて、ごめんなさい。",
+        short: "品揃え・在庫の点、申し訳ございません。"
+      }
+    },
+    {
+      id: "atmosphere", label: "雰囲気・空間",
+      pos: ["雰囲気が良", "雰囲気がいい", "おしゃれ", "オシャレ", "落ち着いた店内", "居心地が良", "居心地の良"],
+      neg: ["うるさすぎ", "騒がしすぎ", "暗すぎ", "狭すぎ", "居心地が悪", "雰囲気が悪"],
+      praise: {
+        polite: "店内の雰囲気も気に入っていただけて、うれしく思います。",
+        friendly: "お店の雰囲気も気に入ってもらえて、うれしいです！",
+        short: "店内の雰囲気へのお褒め、ありがとうございます。"
+      },
+      complaint: {
+        polite: "店内の雰囲気でご不快な思いをおかけし、申し訳ございません。",
+        friendly: "お店の雰囲気で嫌な思いをさせてしまって、ごめんなさい。",
+        short: "店内の雰囲気の点、申し訳ございません。"
+      }
+    }
+  ];
+
+  // ---- 文型（星の帯 × 口調） ----
+  const OPENINGS = {
+    high: {
+      polite: [
+        "このたびは{store}をご利用いただき、誠にありがとうございます。温かいお言葉を頂戴し、スタッフ一同大変うれしく思っております。",
+        "このたびは{store}にご来店いただき、誠にありがとうございます。心のこもったご感想をいただき、スタッフ一同励みになっております。"
+      ],
+      friendly: [
+        "{store}に来てくれてありがとうございます！うれしい口コミ、スタッフみんなで読みました。",
+        "ご来店ありがとうございます！{store}です。うれしい感想をもらえて、スタッフ一同喜んでいます。"
+      ],
+      short: [
+        "ご来店ありがとうございます。お褒めの言葉、励みになります。",
+        "{store}へのご来店、ありがとうございます。うれしいご感想に感謝いたします。"
+      ]
+    },
+    mid: {
+      polite: [
+        "このたびは{store}をご利用いただき、ありがとうございます。率直なご感想をお寄せいただき、今後の参考にさせていただきます。",
+        "このたびは{store}にご来店いただき、ありがとうございます。率直なご意見を頂戴し、感謝申し上げます。"
+      ],
+      friendly: [
+        "{store}に来てくれてありがとうございます。率直な感想、ありがたいです。",
+        "ご来店ありがとうございます。{store}です。率直な感想をもらえてありがたいです。"
+      ],
+      short: [
+        "ご来店ありがとうございます。率直なご感想に感謝いたします。",
+        "{store}へのご来店、ありがとうございます。ご感想を参考にさせていただきます。"
+      ]
+    },
+    low: {
+      polite: [
+        "このたびは{store}をご利用いただいたにもかかわらず、ご不快な思いをおかけし、誠に申し訳ございませんでした。",
+        "このたびは{store}にご来店いただき、ありがとうございました。ご期待に沿えず、ご不快な思いをおかけしましたことを、心よりお詫び申し上げます。"
+      ],
+      friendly: [
+        "{store}に来てくれたのに、嫌な思いをさせてしまって本当にごめんなさい。",
+        "ご来店ありがとうございました。せっかく来てもらったのに、残念な思いをさせてしまってごめんなさい。"
+      ],
+      short: [
+        "ご来店ありがとうございました。ご不快な思いをおかけし、申し訳ございません。",
+        "{store}へのご来店、ありがとうございました。ご期待に沿えず申し訳ございません。"
+      ]
+    }
+  };
+
+  const IMPROVE_LINES = {
+    polite: "ご指摘の点につきましては、当日の状況を確認し、スタッフ全員で共有のうえ、改善に努めてまいります。",
+    friendly: "教えてもらった点は、当日の様子を確認して、スタッフみんなで共有して直していきます。",
+    short: "ご指摘の点は確認のうえ、改善に努めます。"
+  };
+
+  const CLOSINGS = {
+    high: {
+      polite: [
+        "今後もご期待に沿えるよう努めてまいります。またのご来店を、スタッフ一同心よりお待ちしております。",
+        "これからも、また来たいと思っていただけるお店を目指してまいります。またのご来店をお待ちしております。"
+      ],
+      friendly: [
+        "また近くに来たら、ぜひ寄ってくださいね。スタッフ一同お待ちしてます！",
+        "また来てもらえるのを、スタッフみんなで楽しみに待ってます！"
+      ],
+      short: ["またのご来店をお待ちしております。", "またのお越しをお待ちしております。"]
+    },
+    mid: {
+      polite: [
+        "いただいたご意見を真摯に受け止め、より良いお店づくりに活かしてまいります。またのご来店をお待ちしております。",
+        "ご意見を今後のお店づくりに活かしてまいります。次回はよりご満足いただけるよう努めますので、またのご来店をお待ちしております。"
+      ],
+      friendly: [
+        "いただいた感想は、ちゃんと次に活かします。また来てもらえたらうれしいです。",
+        "次はもっと満足してもらえるように頑張ります。またのご来店、お待ちしてます！"
+      ],
+      short: ["ご意見を今後の改善に活かしてまいります。またのご来店をお待ちしております。", "改善に努めてまいります。またのお越しをお待ちしております。"]
+    },
+    low: {
+      polite: [
+        "もしよろしければ、改善した姿をご覧いただける機会を、もう一度いただけますと幸いです。",
+        "至らなかった点を改め、次回はご満足いただけるよう努めますので、機会がございましたらまたのご来店をお待ちしております。"
+      ],
+      friendly: [
+        "よかったら、直したところを見に、もう一度来てもらえたらうれしいです。",
+        "次はちゃんと満足してもらえるようにするので、よかったらまた来てください。"
+      ],
+      short: ["改善のうえ、またのご来店をお待ちしております。", "至らぬ点を改め、またのお越しをお待ちしております。"]
+    }
+  };
+
+  // 重大クレーム専用文型（口調差は最小限。事実を断定せず、個別対応への誘導のみ）
+  const CRITICAL_TEMPLATES = {
+    polite: "このたびは{store}をご利用いただいたにもかかわらず、ご不快な思いをおかけし、誠に申し訳ございません。いただいたご指摘は重大な内容として受け止めております。事実関係を確認のうえ、店舗より個別に対応させていただきます。差し支えなければ、ご来店の日時をお知らせいただけますと幸いです。",
+    friendly: "{store}に来てくれたのに、このような思いをさせてしまって本当に申し訳ありません。いただいた内容は重大なこととして受け止めています。確認のうえ、お店から個別に対応させてください。よければ、来店した日時を教えてもらえると助かります。",
+    short: "ご来店ありがとうございました。ご指摘は重大な内容として受け止め、事実関係を確認のうえ、店舗より個別に対応いたします。ご来店日時をお知らせいただけますと幸いです。"
+  };
+
+  function hashCode(s) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) | 0; }
+    return Math.abs(h);
+  }
+
+  function pick(variants, seed) { return variants[seed % variants.length]; }
+
+  function fill(tpl, store) { return tpl.split("{store}").join(store); }
+
+  function analyze(text) {
+    const critical = CRITICAL_KEYWORDS.some(k => text.includes(k));
+    const hasPII = PII_PATTERNS.some(re => re.test(text));
+    const hits = [];
+    for (const cat of CATEGORIES) {
+      const negHit = cat.neg.some(k => text.includes(k));
+      const posHit = cat.pos.some(k => text.includes(k));
+      if (negHit) hits.push({ id: cat.id, label: cat.label, kind: "complaint", frag: cat.complaint });
+      else if (posHit) hits.push({ id: cat.id, label: cat.label, kind: "praise", frag: cat.praise });
+    }
+    return { critical, hasPII, hits };
+  }
+
+  function buildTone(tone, band, store, feature, hits, seed) {
+    const parts = [];
+    parts.push(fill(pick(OPENINGS[band][tone], seed), store));
+
+    const praises = hits.filter(h => h.kind === "praise");
+    const complaints = hits.filter(h => h.kind === "complaint");
+
+    if (band === "high") {
+      for (const h of praises.slice(0, 2)) parts.push(h.frag[tone]);
+      if (feature && tone !== "short") {
+        parts.push(tone === "polite"
+          ? `当店は${feature}を心がけております。その点も感じていただけていたら、何よりうれしく思います。`
+          : `${feature}っていう当店のこだわりも、感じてもらえてたらうれしいです。`);
+      }
+      for (const h of complaints.slice(0, 1)) {
+        parts.push(h.frag[tone]);
+        parts.push(tone === "short" ? "この点は改善に努めます。" : "この点は真摯に受け止め、改善に努めます。");
+      }
+    } else if (band === "mid") {
+      for (const h of praises.slice(0, 1)) parts.push(h.frag[tone]);
+      for (const h of complaints.slice(0, 2)) parts.push(h.frag[tone]);
+      if (complaints.length > 0) parts.push(IMPROVE_LINES[tone]);
+    } else { // low
+      for (const h of complaints.slice(0, 2)) parts.push(h.frag[tone]);
+      parts.push(IMPROVE_LINES[tone]);
+      for (const h of praises.slice(0, 1)) {
+        parts.push(tone === "short" ? "その中でも良い点に触れていただき、感謝いたします。" : "そのような中でも良い点に触れていただき、ありがとうございます。至らぬ点と合わせて真摯に受け止めます。");
+      }
+    }
+
+    parts.push(pick(CLOSINGS[band][tone], seed + 1));
+    return parts.join("\n");
+  }
+
+  function generate(input) {
+    const store = (input.store || "").trim() || "当店";
+    const feature = (input.feature || "").trim();
+    const stars = Math.min(5, Math.max(1, parseInt(input.stars, 10) || 3));
+    const text = String(input.text || "");
+    const a = analyze(text);
+    const band = stars >= 4 ? "high" : (stars === 3 ? "mid" : "low");
+    const seed = hashCode(text + "|" + stars + "|" + store);
+
+    let replies;
+    if (a.critical) {
+      replies = {
+        polite: fill(CRITICAL_TEMPLATES.polite, store),
+        friendly: fill(CRITICAL_TEMPLATES.friendly, store),
+        short: fill(CRITICAL_TEMPLATES.short, store)
+      };
+    } else {
+      replies = {
+        polite: buildTone("polite", band, store, feature, a.hits, seed),
+        friendly: buildTone("friendly", band, store, feature, a.hits, seed),
+        short: buildTone("short", band, store, feature, a.hits, seed)
+      };
+    }
+    return {
+      replies,
+      critical: a.critical,
+      hasPII: a.hasPII,
+      band,
+      matchedTopics: a.hits.map(h => ({ id: h.id, label: h.label, kind: h.kind }))
+    };
+  }
+
+  // ---- 動作確認用サンプル口コミ10件 ----
+  const SAMPLES = [
+    { name: "S01 星5・飲食（味＋接客）", store: "麺屋 たかはし", genre: "飲食店", feature: "自家製麺と無化調スープ", stars: 5,
+      text: "初めて行きましたが、ラーメンが本当に美味しかったです。自家製麺のコシが絶妙で、スープまで飲み干しました。店員さんも笑顔で親切に対応してくれて、気持ちよく食事できました。また必ず行きます。" },
+    { name: "S02 星5・美容（技術＋接客）", store: "hair salon Lumo", genre: "美容室・サロン", feature: "髪質改善トリートメント", stars: 5,
+      text: "カットとカラーをお願いしました。仕上がりがイメージ通りで大満足です。担当のスタッフさんが丁寧にカウンセリングしてくれて、家でのケア方法まで教えてくれました。" },
+    { name: "S03 星4・小売（品揃え＋価格）", store: "雑貨店 マルシェ青葉", genre: "小売店", feature: "地元作家のハンドメイド雑貨", stars: 4,
+      text: "品揃えが豊富で、見ているだけでも楽しいお店です。価格もリーズナブルで、つい色々買ってしまいました。贈り物用のラッピングも快く対応してもらえました。" },
+    { name: "S04 星4・飲食（味は高評価／待ち時間に不満）", store: "カフェ そらまめ", genre: "飲食店", feature: "自家焙煎コーヒーと手作りケーキ", stars: 4,
+      text: "ケーキが美味しくて、コーヒーとの相性も抜群でした。ただ、注文してから出てくるのが遅くて、待ち時間が気になりました。味は文句なしなので、提供がもう少し早いと完璧です。" },
+    { name: "S05 星3・飲食（可もなく不可もなく＋混雑）", store: "大衆食堂 ふくまる", genre: "飲食店", feature: "", stars: 3,
+      text: "定食は普通に美味しかったです。可もなく不可もなく、といった感じ。昼時はかなり混んでいて、席に着くまで少し待ちました。近くに来たらまた寄るかもしれません。" },
+    { name: "S06 星3・美容（仕上がり良／予約に不満）", store: "ネイルサロン Claire", genre: "美容室・サロン", feature: "持ちの良いジェルネイル", stars: 3,
+      text: "仕上がりはとても可愛くて満足しています。ただ、予約したのに15分ほど待たされてしまいました。施術は丁寧だっただけに、時間通りに始めてほしかったです。" },
+    { name: "S07 星2・小売（接客＋在庫）", store: "文具店 ペンと紙", genre: "小売店", feature: "", stars: 2,
+      text: "お目当ての商品がなく、在庫も確認してもらえませんでした。店員の態度が悪く、聞いてもそっけない対応で残念です。立地は良いのに、もったいないと思いました。" },
+    { name: "S08 星2・飲食（清潔さ＋価格）", store: "居酒屋 わらじ屋", genre: "飲食店", feature: "", stars: 2,
+      text: "料理は普通でしたが、テーブルがベタベタしていて汚いのが気になりました。店内の清潔さにもう少し気を配ってほしいです。値段も割高に感じました。" },
+    { name: "S09 星1・飲食（接客＋待ち時間・強い不満）", store: "焼肉 だるま亭", genre: "飲食店", feature: "", stars: 1,
+      text: "最悪でした。注文してから40分以上待たされ、店員を呼んでも無視されました。やっと来た店員の態度が悪く、謝罪もなし。二度と行きません。友人にも勧めません。" },
+    { name: "S10 星1・飲食（異物混入＝重大クレーム）", store: "洋食キッチン ポム", genre: "飲食店", feature: "", stars: 1,
+      text: "オムライスに異物が入っていました。すぐに店員さんに伝えましたが、とても心配です。衛生管理はどうなっているのでしょうか。きちんとした説明がほしいです。" }
+  ];
+
+  return { generate, analyze, SAMPLES, CRITICAL_KEYWORDS };
+})();
+</script>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  let stars = 5;
+
+  const starBtns = document.querySelectorAll("#stars button");
+  function renderStars() {
+    starBtns.forEach(b => b.classList.toggle("on", parseInt(b.dataset.v, 10) <= stars));
+  }
+  starBtns.forEach(b => b.addEventListener("click", () => { stars = parseInt(b.dataset.v, 10); renderStars(); }));
+  renderStars();
+
+  const sel = $("sampleSel");
+  ReviewReplyEngine.SAMPLES.forEach((s, i) => {
+    const opt = document.createElement("option");
+    opt.value = String(i);
+    opt.textContent = s.name;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener("change", () => {
+    if (sel.value === "") return;
+    const s = ReviewReplyEngine.SAMPLES[parseInt(sel.value, 10)];
+    $("storeName").value = s.store;
+    $("genre").value = s.genre;
+    $("feature").value = s.feature;
+    $("reviewText").value = s.text;
+    stars = s.stars;
+    renderStars();
+  });
+
+  $("genBtn").addEventListener("click", () => {
+    const text = $("reviewText").value.trim();
+    if (!text) { alert("口コミ本文を貼り付けてください。"); return; }
+    const r = ReviewReplyEngine.generate({
+      store: $("storeName").value,
+      genre: $("genre").value,
+      feature: $("feature").value,
+      stars: stars,
+      text: text
+    });
+
+    const warn = $("critWarn");
+    if (r.critical) {
+      warn.style.display = "block";
+      warn.textContent = "⚠ この口コミには、健康・安全や金銭に関わる重大な内容が含まれている可能性があります。生成された返信案は最小限の型のみです。内容をご自身で確認し、事実関係を把握したうえで、店主ご自身の言葉で対応することを強くおすすめします。";
+    } else {
+      warn.style.display = "none";
+    }
+
+    const note = $("piiNote");
+    if (r.hasPII) {
+      note.style.display = "block";
+      note.textContent = "※ 貼り付けた口コミに、電話番号やメールアドレスらしき文字列が含まれています。生成される返信案にはそれらを一切含めていません。";
+    } else {
+      note.style.display = "none";
+    }
+
+    for (const tone of ["polite", "friendly", "short"]) {
+      $("out-" + tone).textContent = r.replies[tone];
+      $("cnt-" + tone).textContent = r.replies[tone].length + "文字";
+    }
+    $("results").style.display = "block";
+    $("results").scrollIntoView({ behavior: "smooth" });
+  });
+
+  document.querySelectorAll(".copy").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const t = $("out-" + btn.dataset.t).textContent;
+      try { await navigator.clipboard.writeText(t); btn.textContent = "コピーしました"; }
+      catch (e) {
+        const ta = document.createElement("textarea");
+        ta.value = t; document.body.appendChild(ta); ta.select();
+        document.execCommand("copy"); document.body.removeChild(ta);
+        btn.textContent = "コピーしました";
+      }
+      setTimeout(() => { btn.textContent = "コピー"; }, 1600);
+    });
+  });
+})();
+</script>
+</body>
+</html>

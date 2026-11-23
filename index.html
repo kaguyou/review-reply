@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>口コミ返信アシスト（仮称）| 貼るだけで、返信の下書きまで</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; margin: 0; color: #2b2b2b; line-height: 1.8; background: #fff; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 16px; }
+  header { background: #31572c; color: #fff; padding: 56px 0 48px; text-align: center; }
+  header .badge { display: inline-block; background: #fff3cd; color: #7a5b00; font-size: 12px; font-weight: bold; padding: 3px 12px; border-radius: 20px; margin-bottom: 16px; }
+  header h1 { font-size: 30px; margin: 0 0 14px; line-height: 1.4; }
+  header p { margin: 0 auto; max-width: 640px; font-size: 15px; opacity: .95; }
+  .cta { display: inline-block; margin-top: 26px; background: #e8a020; color: #fff; font-weight: bold; font-size: 16px; padding: 13px 34px; border-radius: 8px; text-decoration: none; }
+  section { padding: 44px 0 8px; }
+  h2 { font-size: 21px; text-align: center; margin: 0 0 22px; }
+  .pain { background: #f6f4ef; border-radius: 12px; padding: 26px; }
+  .pain .big { font-size: 34px; font-weight: bold; color: #31572c; text-align: center; margin: 0; }
+  .pain .big span { font-size: 16px; }
+  .pain p.note { font-size: 12px; color: #777; text-align: center; margin: 10px 0 0; }
+  .pain ul { max-width: 560px; margin: 18px auto 0; padding-left: 20px; font-size: 14.5px; }
+  .steps { display: grid; gap: 14px; }
+  @media (min-width: 700px) { .steps { grid-template-columns: 1fr 1fr 1fr; } .feats { grid-template-columns: 1fr 1fr; } .plans { grid-template-columns: 1fr 1fr 1fr; } }
+  .step { border: 1px solid #e2ddd2; border-radius: 10px; padding: 18px; background: #fffdf8; }
+  .step .num { display: inline-block; background: #31572c; color: #fff; width: 26px; height: 26px; border-radius: 50%; text-align: center; line-height: 26px; font-weight: bold; font-size: 14px; }
+  .step h3 { margin: 10px 0 6px; font-size: 15.5px; }
+  .step p { margin: 0; font-size: 13.5px; }
+  .feats { display: grid; gap: 14px; }
+  .feat { border: 1px solid #e2ddd2; border-radius: 10px; padding: 18px; }
+  .feat h3 { margin: 0 0 6px; font-size: 15.5px; color: #31572c; }
+  .feat p { margin: 0; font-size: 13.5px; }
+  .plans { display: grid; gap: 14px; }
+  .plan { border: 1px solid #e2ddd2; border-radius: 10px; padding: 20px; text-align: center; background: #fffdf8; }
+  .plan h3 { margin: 0 0 4px; font-size: 15px; }
+  .plan .price { font-size: 26px; font-weight: bold; color: #31572c; margin: 6px 0; }
+  .plan .price span { font-size: 13px; font-weight: normal; }
+  .plan ul { list-style: none; padding: 0; margin: 10px 0 0; font-size: 13px; }
+  .plan .soon { display: inline-block; margin-top: 12px; background: #eee; color: #666; font-size: 12px; padding: 3px 12px; border-radius: 20px; }
+  .why { font-size: 13.5px; background: #f6f4ef; border-radius: 10px; padding: 16px 20px; margin-top: 16px; }
+  .faq dt { font-weight: bold; margin-top: 14px; font-size: 14.5px; }
+  .faq dd { margin: 4px 0 0; font-size: 13.5px; }
+  .final { text-align: center; padding: 40px 0 56px; }
+  footer { background: #2b2b2b; color: #bbb; font-size: 12px; text-align: center; padding: 20px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <span class="badge">現在、準備中（先行登録の受付を予定しています）</span>
+    <h1>口コミ返信、<br>貼るだけで下書きまで。</h1>
+    <p>Google口コミへの返信文を考える時間を、ぐっと短く。口コミを貼り付けるだけで、その内容に触れた返信の下書きが3パターンできます。あとは確認して、少し直して、投稿するだけです。</p>
+    <a class="cta" href="tool.html">無料で試してみる</a>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2>返信作業に、こんなに時間がかかっています</h2>
+    <div class="pain">
+      <p class="big">月 約9.5時間<span>（口コミ 月30件の場合）</span></p>
+      <ul>
+        <li>口コミの確認に 1件 約2分、返信文を考えるのに 1件 約10分</li>
+        <li>低評価の口コミへの対応は 1件 約20分。文面に悩み、つい後回しに</li>
+        <li>返信率が6割にとどまるお店もあり、放置した口コミは次のお客様の目にも触れます</li>
+      </ul>
+      <p class="note">※ 工数の目安は、口コミ対応の実務試算（確認2分／返信作成10分／ネガティブ対応20分、月30件）に基づきます。</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>使い方は3ステップ</h2>
+    <div class="steps">
+      <div class="step">
+        <span class="num">1</span>
+        <h3>お店の情報を入れる</h3>
+        <p>店舗名と業種、お店の特徴（自慢のメニューやこだわり）を最初に一度だけ設定します。</p>
+      </div>
+      <div class="step">
+        <span class="num">2</span>
+        <h3>口コミを貼る</h3>
+        <p>星の数と口コミ本文を貼り付けます。味・接客・価格・清潔さ・待ち時間など、本文で触れられている話題を読み取ります。</p>
+      </div>
+      <div class="step">
+        <span class="num">3</span>
+        <h3>選んで、直して、投稿</h3>
+        <p>「丁寧」「親しみ」「簡潔」の3パターンから選んでコピー。気になるところだけ直して、そのまま返信に使えます。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>ただのテンプレートではありません</h2>
+    <div class="feats">
+      <div class="feat">
+        <h3>口コミの中身に触れる返信</h3>
+        <p>「美味しかった」には料理への感謝を、「待たされた」にはその点への謝罪を。話題ごとに文面が変わるので、どの口コミにも同じ文面、にはなりません。</p>
+      </div>
+      <div class="feat">
+        <h3>低評価には、低評価の型</h3>
+        <p>星1〜2には、謝罪 → 事実の確認 → 改善の姿勢 → もう一度来ていただくお願い、の順で組み立てます。言い訳や反論の文面は作りません。</p>
+      </div>
+      <div class="feat">
+        <h3>重大な内容は、警告して止める</h3>
+        <p>異物混入や体調不良など、健康・安全に関わる口コミは自動で判別し、定型文ではなく「店主ご自身で対応を」と警告と最小限の文型だけを出します。</p>
+      </div>
+      <div class="feat">
+        <h3>個人情報は返信に含めない</h3>
+        <p>投稿者のお名前や、口コミに含まれる電話番号などには一切触れない文面だけを生成します。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>料金（予定）</h2>
+    <div class="plans">
+      <div class="plan">
+        <h3>ベーシック</h3>
+        <p class="price">¥980<span> / 月（税込）</span></p>
+        <ul>
+          <li>返信の下書き 月30件まで</li>
+          <li>1店舗</li>
+          <li>3パターン生成</li>
+        </ul>
+        <span class="soon">準備中</span>
+      </div>
+      <div class="plan">
+        <h3>スタンダード</h3>
+        <p class="price">¥1,980<span> / 月（税込）</span></p>
+        <ul>
+          <li>返信の下書き 月100件まで</li>
+          <li>1店舗</li>
+          <li>3パターン生成</li>
+        </ul>
+        <span class="soon">準備中</span>
+      </div>
+      <div class="plan">
+        <h3>プレミアム</h3>
+        <p class="price">¥2,980<span> / 月（税込）</span></p>
+        <ul>
+          <li>返信の下書き 件数無制限</li>
+          <li>複数店舗に対応</li>
+          <li>3パターン生成</li>
+        </ul>
+        <span class="soon">準備中</span>
+      </div>
+    </div>
+    <div class="why">
+      <strong>この価格帯の理由:</strong>
+      口コミ管理ツールは月1万円〜5万円が相場で、個人店には負担が大きいのが実情です。一方で、個人の居酒屋が月3,000円の構成で口コミ対応を運用した事例もあります。本サービスは「下書きを作る」ことに絞り、その事例の価格帯よりも下に設定しました。なお、料金は検討中の仮説であり、正式リリース時に変更となる場合があります。
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>よくある質問</h2>
+    <dl class="faq">
+      <dt>返信はそのまま投稿されますか？</dt>
+      <dd>いいえ。下書きを作るだけです。投稿は必ずお店の方が内容を確認してから行う前提で設計しています。</dd>
+      <dt>食べログやホットペッパーの口コミにも使えますか？</dt>
+      <dd>本文を貼り付ける方式なので、どの媒体の口コミでも下書きは作れます。媒体ごとの自動取得は今後の検討事項です。</dd>
+      <dt>ひどい内容の口コミにも使えますか？</dt>
+      <dd>低評価向けの文型は用意していますが、健康・安全や金銭トラブルに関わる重大な内容については、定型文での対応をおすすめしません。その場合は警告を表示します。</dd>
+      <dt>いつから使えますか？</dt>
+      <dd>現在準備中です。先行登録をしていただいた方から順にご案内します。</dd>
+    </dl>
+  </div>
+</section>
+
+<div class="final">
+  <div class="wrap">
+    <h2>返信に悩む時間を、接客の時間に。</h2>
+    <a class="cta" href="https://forms.gle/REPLACE_WITH_GOOGLE_FORM_URL">先行登録に申し込む</a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">口コミ返信アシスト（仮称） ― 現在準備中です。本ページの料金・仕様は検討中の内容を含みます。</div>
+</footer>
+
+</body>
+</html>
